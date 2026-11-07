@@ -15,7 +15,7 @@
 | パス | 内容 |
 | :--- | :--- |
 | `terraform/versions.tf` | Terraform、provider、R2 backend の設定 |
-| `terraform/zone.tf` | zone の参照と DNSSEC |
+| `terraform/zone.tf` | zone の参照と DNSSEC（無効） |
 | `terraform/mail.tf` | メールを使わないことの宣言（Null MX、SPF、DMARC） |
 | `.github/workflows/plan.yml` | PR と Merge Queue で `terraform plan` |
 | `.github/workflows/apply.yml` | `main` への push で `terraform apply` |
@@ -59,7 +59,7 @@ cf-terraforming import --resource-type cloudflare_dns_record --zone <ZONE_ID> --
 ```
 
 出力された `resource` と `import` ブロックを `terraform/` に置き、PR の plan で差分が import だけであることを確認してから merge します。
-DNSSEC がすでに有効な場合は、`cloudflare_zone_dnssec.abyss0` も `<ZONE_ID>` で import します。
+DNSSEC の設定は `cloudflare_zone_dnssec.abyss0` で管理し、現在は `disabled` を宣言しています。
 
 ## コマンド
 
