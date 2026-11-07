@@ -10,7 +10,8 @@ locals {
   zone_name = data.cloudflare_zone.abyss0.name
 }
 
+# DNSSEC は意図的に無効にしている。ダッシュボードから有効にされた場合も、plan で差分として検出する。
 resource "cloudflare_zone_dnssec" "abyss0" {
   zone_id = local.zone_id
-  status  = "active"
+  status  = "disabled"
 }

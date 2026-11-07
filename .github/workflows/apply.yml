@@ -16,8 +16,8 @@ jobs:
   apply:
     runs-on: takumi-runner
     timeout-minutes: 15
-    # 1Password の abyss0-dns-apply は、この GitHub environment かつ main からの OIDC だけを信頼する。
-    # GitHub 側でも deployment branch を main に制限する。
+    # 1Password の abyss0-dns-apply は、この workflow と GitHub environment からの OIDC だけを信頼する。
+    # 1Password 側には branch の条件がないため、main への制限は environment の deployment branch だけが担う。
     environment: abyss0-dns-apply
     permissions:
       contents: read
