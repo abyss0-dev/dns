@@ -1,0 +1,48 @@
+name: apply
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+# apply を直列化する。実行中の apply を取り消すと state が中途半端になるため、cancel しない。
+concurrency:
+  group: abyss0-dns-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: takumi-runner
+    timeout-minutes: 15
+    # 1Password の abyss0-dns-apply は、この GitHub environment かつ main からの OIDC だけを信頼する。
+    # GitHub 側でも deployment branch を main に制限する。
+    environment: abyss0-dns-apply
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Terraform の provider は Takumi Guard の対象外の registry から取得する。
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+        env:
+          OP_WORKLOAD_ID: ${{ vars.OP_WORKLOAD_ID }}
+          OP_ENVIRONMENT_ID: ${{ vars.OP_ENVIRONMENT_ID }}
+          OP_INTEGRATION_KEY: ${{ secrets.OP_INTEGRATION_KEY }}
+
+      - name: terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: terraform apply
+        working-directory: terraform
+        run: terraform apply -input=false -auto-approve

@@ -1,0 +1,21 @@
+# Local environment
+.env
+.env.*
+!.env.example
+.mise.local.toml
+
+# Common build output
+node_modules/
+dist/
+target/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+
+# Editor and OS files
+.DS_Store
+Thumbs.db

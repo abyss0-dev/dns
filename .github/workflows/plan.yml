@@ -1,0 +1,54 @@
+name: plan
+
+on:
+  pull_request:
+  merge_group:
+
+permissions: {}
+
+jobs:
+  plan:
+    runs-on: takumi-runner
+    timeout-minutes: 15
+    # 1Password の abyss0-dns-plan は、この GitHub environment からの OIDC だけを信頼する。
+    # 中身は読み取り専用トークンなので、PR のコードに渡っても DNS は変更できない。
+    environment: abyss0-dns-plan
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Terraform の provider は Takumi Guard の対象外の registry から取得する。
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+
+      # fmt と validate は認証情報なしで落とせるので、シークレットを読み込む前に実行する。
+      - run: mise run tf:check
+
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+        env:
+          OP_WORKLOAD_ID: ${{ vars.OP_WORKLOAD_ID }}
+          OP_ENVIRONMENT_ID: ${{ vars.OP_ENVIRONMENT_ID }}
+          OP_INTEGRATION_KEY: ${{ secrets.OP_INTEGRATION_KEY }}
+
+      - name: terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      # plan 用の R2 トークンは読み取り専用なので、lockfile を書かない。
+      - name: terraform plan
+        working-directory: terraform
+        run: |
+          set -o pipefail
+          terraform plan -input=false -lock=false -no-color | tee plan.txt
+          {
+            echo '## terraform plan'
+            echo '```'
+            cat plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

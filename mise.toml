@@ -1,0 +1,34 @@
+[tools]
+pinact = "4.1.1"
+terraform = "1.17.1"
+
+[tasks."actions:pin"]
+description = "Pin external Actions and reusable workflows"
+run = "pinact run"
+
+[tasks."actions:check"]
+description = "Verify Action pins and version comments"
+run = "pinact run -check -verify-comment"
+
+[tasks."actions:update"]
+description = "Update external Actions and reusable workflows"
+run = "pinact run -update"
+
+[tasks."tf:fmt"]
+description = "Format Terraform files"
+dir = "terraform"
+run = "terraform fmt"
+
+[tasks."tf:check"]
+description = "Check Terraform formatting and validity without backend access"
+dir = "terraform"
+run = [
+  "terraform fmt -check -diff",
+  "terraform init -backend=false -input=false",
+  "terraform validate",
+]
+
+[tasks."tf:lock"]
+description = "Record provider checksums for CI and local platforms"
+dir = "terraform"
+run = "terraform providers lock -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_arm64"
