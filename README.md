@@ -29,8 +29,8 @@ plan と apply で Environment を分け、plan 側には読み取り権限だ�
 
 | 1Password Environment | Cloudflare API Token | zone `abyss0.dev` | R2 バケット `abyss0-dns-tfstate` | 信頼条件 |
 | :--- | :--- | :--- | :--- | :--- |
-| `abyss0-dns-plan` | `abyss0-dns-plan` | DNS Read | Workers R2 Storage Bucket Item Read | repo `abyss0-dev/dns`、environment `abyss0-dns-plan` |
-| `abyss0-dns-apply` | `abyss0-dns-apply` | DNS Read、DNS Write | Workers R2 Storage Bucket Item Read、Write | repo `abyss0-dev/dns`、environment `abyss0-dns-apply`、branch `main` |
+| `abyss0-dns-plan` | `abyss0-dns-plan` | DNS Read | Workers R2 Storage Bucket Item Read | repository `dns`、workflow `plan`、environment `abyss0-dns-plan` |
+| `abyss0-dns-apply` | `abyss0-dns-apply` | DNS Read、DNS Write | Workers R2 Storage Bucket Item Read、Write | repository `dns`、workflow `apply`、environment `abyss0-dns-apply` |
 
 各 Environment に置く変数は次の3つだけです。Environment 内の変数はすべて job に渡ります。
 
@@ -40,11 +40,16 @@ plan と apply で Environment を分け、plan 側には読み取り権限だ�
 
 トークンの有効期限は 2027-11-07 です。期限前に同じ権限で再発行し、両方の Environment を更新してください。
 
+1Password の連携では、repository 欄に org 名を付けません。`abyss0-dev/dns` と入れると認証が 403 で失敗します。
+
+連携には branch の条件がありません。apply を `main` に限るのは、GitHub environment `abyss0-dns-apply` の deployment branch 制限だけです。この制限を外さないでください。
+
 GitHub の environment には、それぞれ次を設定します。
 
 - variables: `OP_WORKLOAD_ID`、`OP_ENVIRONMENT_ID`
-- secrets: `OP_INTEGRATION_KEY`
 - `abyss0-dns-apply` だけ、deployment branch を `main` に制限する
+
+`OP_INTEGRATION_KEY` は integration ごとに1つで、org secret として登録してあります。
 
 fork からの PR には OIDC トークンが渡らないため、plan は失敗します。`pull_request_target` には変更しないでください。
 
