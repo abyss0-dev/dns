@@ -25,12 +25,20 @@
 GitHub Actions は OIDC で 1Password Credential Broker（public preview）に認証し、1Password Environment の変数をすべて環境変数として読み込みます。
 plan と apply で Environment を分け、plan 側には読み取り権限だけを与えます。
 
-| 1Password Environment | `CLOUDFLARE_API_TOKEN` | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`（R2） | 信頼条件 |
-| :--- | :--- | :--- | :--- |
-| `abyss0-dns-plan` | Zone: DNS Read（`abyss0.dev` のみ） | Object Read only（`abyss0-dns-tfstate` のみ） | repo `abyss0-dev/dns`、environment `abyss0-dns-plan` |
-| `abyss0-dns-apply` | Zone: DNS Edit（`abyss0.dev` のみ） | Object Read & Write（`abyss0-dns-tfstate` のみ） | repo `abyss0-dev/dns`、environment `abyss0-dns-apply`、branch `main` |
+各 Environment には Account Owned API Token を1つずつ割り当て、そのトークンに zone と state バケットの両方の権限を与えます。
 
-1Password Environment が読み込まれるのは、上の3変数だけにしてください。Environment 内の変数はすべて job に渡ります。
+| 1Password Environment | Cloudflare API Token | zone `abyss0.dev` | R2 バケット `abyss0-dns-tfstate` | 信頼条件 |
+| :--- | :--- | :--- | :--- | :--- |
+| `abyss0-dns-plan` | `abyss0-dns-plan` | DNS Read | Workers R2 Storage Bucket Item Read | repo `abyss0-dev/dns`、environment `abyss0-dns-plan` |
+| `abyss0-dns-apply` | `abyss0-dns-apply` | DNS Read、DNS Write | Workers R2 Storage Bucket Item Read、Write | repo `abyss0-dev/dns`、environment `abyss0-dns-apply`、branch `main` |
+
+各 Environment に置く変数は次の3つだけです。Environment 内の変数はすべて job に渡ります。
+
+- `CLOUDFLARE_API_TOKEN`: トークンの値
+- `AWS_ACCESS_KEY_ID`: トークンの ID
+- `AWS_SECRET_ACCESS_KEY`: トークンの値の SHA-256（R2 の S3 互換認証情報）
+
+トークンの有効期限は 2027-11-07 です。期限前に同じ権限で再発行し、両方の Environment を更新してください。
 
 GitHub の environment には、それぞれ次を設定します。
 
@@ -44,7 +52,7 @@ fork からの PR には OIDC トークンが渡らないため、plan は失敗
 
 1. リポジトリを作成し、`./setup-repository.sh` で共通設定を適用する。
 2. R2 バケット `abyss0-dns-tfstate` を作成する。state を保持するため、Terraform の外で作成します。
-3. 上の表のとおり、Cloudflare API Token と R2 API Token を2組発行し、1Password Environment に登録する。
+3. 上の表のとおり Cloudflare API Token を2つ発行し、1Password Environment に登録する。
 4. 1Password Environment を GitHub Actions に連携し、GitHub の environment を作成する。
 5. 既存レコードを取り込む（次節）。
 
